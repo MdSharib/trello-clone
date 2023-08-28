@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import toast from "react-hot-toast";
+import axios from "axios";
 
-const ListTasks = ({ tasks, setTasks }) => {
+const ListTasks = ({ tasks, setTasks, callData }) => {
   const [todos, setTodos] = useState([]);
   const [inProgress, setInProgress] = useState([]);
   const [closed, setClosed] = useState([]);
 
   useEffect(() => {
-    console.log("list task running");
     const fTodos = tasks.filter((task) => task.status === "todo");
     const fInProgress = tasks.filter((task) => task.status === "inprogress");
     const fClosed = tasks.filter((task) => task.status === "closed");
@@ -27,6 +27,7 @@ const ListTasks = ({ tasks, setTasks }) => {
             key={index}
             status={status}
             tasks={tasks}
+            callData={callData}
             setTasks={setTasks}
             todos={todos}
             inProgress={inProgress}
@@ -41,11 +42,19 @@ const ListTasks = ({ tasks, setTasks }) => {
 export default ListTasks;
 
 // for each - todo, inprogress, closed
-const Section = ({ status, tasks, setTasks, todos, inProgress, closed }) => {
+const Section = ({
+  status,
+  tasks,
+  setTasks,
+  todos,
+  inProgress,
+  closed,
+  callData,
+}) => {
   // react dnd for dropping
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "task",
-    drop: (item) => addItemToSection(item.id),
+    drop: (item) => addItemToSection(item.taskId),
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
@@ -66,20 +75,29 @@ const Section = ({ status, tasks, setTasks, todos, inProgress, closed }) => {
     tasksToMap = closed;
   }
 
-  // function to change the status of tasl
-  // use backend here to change status of task
-  const addItemToSection = (id) => {
-    setTasks((prev) => {
-      const modifiedTask = prev.map((t) => {
-        if (t.id === id) {
-          return { ...t, status: status };
-        }
-        return t;
+  // to change the status of task
+  const addItemToSection = async (taskId) => {
+    // console.log("add item to section running and status is ->", status);
+    try {
+      const res = await axios.put("/change-tasks", {
+        status: status,
+        taskId: taskId,
       });
-      localStorage.setItem("tasks", JSON.stringify(modifiedTask));
-      toast("Task Updated Successfully");
-      return modifiedTask;
-    });
+
+      // const newTask = task.map((val) => {
+      //     if(val.taskId === res.data.updatedTask.taskId){
+      //       val = res.data.updatedTask;
+      //     }
+      // });
+      if (res.data.success) {
+        callData("success");
+        toast("Updated Successfully");
+        return res.data.updatedTask;
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong");
+    }
   };
 
   return (
@@ -90,7 +108,13 @@ const Section = ({ status, tasks, setTasks, todos, inProgress, closed }) => {
       <Header text={text} bg={bg} count={tasksToMap.length} />
       {tasksToMap.length > 0 &&
         tasksToMap.map((task) => (
-          <Task key={task.id} task={task} tasks={tasks} setTasks={setTasks} />
+          <Task
+            key={task.taskId}
+            task={task}
+            callData={callData}
+            tasks={tasks}
+            setTasks={setTasks}
+          />
         ))}
     </div>
   );
@@ -111,63 +135,76 @@ const Header = ({ text, bg, count }) => {
 };
 
 // for single task component
-const Task = ({ task, tasks, setTasks }) => {
+const Task = ({ task, tasks, setTasks, callData }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [updateid, setUpdateId] = useState('');
-  const [updatedName, setUpdatedName] = useState('');
-  const [updatedDescription, setUpdatedDescription] = useState('');
-
-
+  const [updateid, setUpdateId] = useState("");
+  const [updatedName, setUpdatedName] = useState("");
+  const [updatedDescription, setUpdatedDescription] = useState("");
 
   // react dnd for initial dragging
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
-    item: { id: task.id },
+    item: { taskId: task.taskId },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
 
-  // use backend for deleting task
-  const handleRemove = (id) => {
-    const fTasks = tasks.filter((t) => t.id !== id);
-
-    localStorage.setItem("tasks", JSON.stringify(fTasks));
-    setTasks(fTasks);
-
-    toast("Task Removed");
+  //for deleting task
+  const handleRemove = async (taskId) => {
+    try {
+      const res = await axios.delete(`/delete-task/${taskId}`);
+      if (res.data.success) {
+        toast("Task Removed");
+        callData("success");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
-  
+
   const EditBtnHandler = (taskId) => {
     setIsEditing(!isEditing);
     setUpdateId(taskId);
   };
 
-
   // handle edit of task name
-  // use backend to handle update task
-  const handleEdit = () => {
-    if(updatedName.length < 3 || updatedDescription.length < 3){
-      return toast.error("Please enter atleast 3 characters!")
+  const handleEdit = async () => {
+    if (updatedName.length < 3 || updatedDescription.length < 3) {
+      return toast.error("Please enter atleast 3 characters!");
     }
-    if(updatedName.length > 100 || updatedDescription.length > 100){
-      return toast.error("Please enter less than 100 characters!")
+    if (updatedName.length > 100 || updatedDescription.length > 100) {
+      return toast.error("Please enter less than 100 characters!");
     }
-    const fTasks = tasks.map((t) =>{
-        if(t.id === updateid){
-          t.name = updatedName;
-          t.description = updatedDescription;
-          return t;
-        }
+    
+    // console.log("to update id " ,updateid)
+    const fTasks = tasks.find((t) => {
+      if (t.taskId === updateid) {
+        t.name = updatedName;
+        t.description = updatedDescription;
         return t;
-    } );
-    localStorage.setItem("tasks", JSON.stringify(fTasks));
-    setTasks(fTasks);
-    toast("Updated Successfully");
-    setUpdateId("");
-    setUpdatedName("");
-    setUpdatedDescription("");
-    setIsEditing(!isEditing);
+      }
+    });
+    console.log("edited task -> ", fTasks);
+
+    try {
+      const res = await axios.put("/edit-tasks", {
+        name: fTasks.name,
+        description: fTasks.description,
+        status: fTasks.status,
+        taskId: fTasks.taskId,
+      });
+
+      callData("success");
+      toast("Updated Successfully");
+      setUpdateId("");
+      setUpdatedName("");
+      setUpdatedDescription("");
+      setIsEditing(!isEditing);
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong");
+    }
   };
   return (
     <div
@@ -180,7 +217,7 @@ const Task = ({ task, tasks, setTasks }) => {
       <p>{task.description}</p>
       <button
         className="absolute bottom-1 right-1 text-slate-400"
-        onClick={() => handleRemove(task.id)}
+        onClick={() => handleRemove(task.taskId)}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -199,7 +236,7 @@ const Task = ({ task, tasks, setTasks }) => {
       </button>
       <button
         className="absolute bottom-1 right-7 text-slate-400"
-        onClick={() => EditBtnHandler(task.id)}
+        onClick={() => EditBtnHandler(task.taskId)}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -233,7 +270,10 @@ const Task = ({ task, tasks, setTasks }) => {
             value={updatedDescription}
             onChange={(e) => setUpdatedDescription(e.target.value)}
           />
-          <button className="bg-cyan-500 rounded-md px-4 h-10 text-white" onClick={handleEdit}>
+          <button
+            className="bg-cyan-500 rounded-md px-4 h-10 text-white"
+            onClick={handleEdit}
+          >
             Update
           </button>
         </div>
