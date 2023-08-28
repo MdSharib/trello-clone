@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
-import tasksRoutes from "./routes/tasksRoutes.js"
 import cors from "cors";
 import taskModel from "./models/taskModel.js";
 //configure env
@@ -72,8 +71,7 @@ app.get("/get-tasks", async(req, res) => {
 app.put("/edit-tasks", async(req, res) => {
   try {
     const { name, description, status, taskId } = req.body;
-    // const task = await taskModel.findById(id);
-    console.log(name, description, status, taskId);
+
     const updatedTask = await taskModel.findOneAndUpdate(
       {taskId},
       {
