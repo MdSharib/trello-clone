@@ -59,31 +59,32 @@ const CreateTask = ({ tasks, setTasks, callData }) => {
 
   return (
     <form
-      onSubmit={handleSubmit}
-      className="flex flex-col items-center bg-white rounded-lg shadow-md p-6"
-    >
-      <input
-        type="text"
-        className="border-2 border-slate-400 bg-slate-100 rounded-md mb-4 h-12 w-64 px-1"
-        onChange={(e) =>
-          setTask({ ...task, taskId: uuidv4(), name: e.target.value })
-        }
-        value={task.name}
-        placeholder="Enter Task Name"
-      />
-      <input
-        type="text"
-        className="border-2 border-slate-400 bg-slate-100 rounded-md mb-4 h-12 w-64 px-1"
-        onChange={(e) =>
-          setTask({ ...task, taskId: uuidv4(), description: e.target.value })
-        }
-        value={task.description}
-        placeholder="Enter Task Description"
-      />
-      <button className="bg-cyan-500 rounded-md px-4 h-12 text-white">
-        Create
-      </button>
-    </form>
+  onSubmit={handleSubmit}
+  className="flex flex-col md:flex-row items-center bg-white rounded-lg shadow-md p-6"
+>
+  <input
+    type="text"
+    className="border-2 border-slate-400 bg-slate-100 rounded-md mb-4 md:mb-0 md:mr-4 h-12 w-full md:w-64 px-1"
+    onChange={(e) =>
+      setTask({ ...task, taskId: uuidv4(), name: e.target.value })
+    }
+    value={task.name}
+    placeholder="Enter Task Name"
+  />
+  <input
+    type="text"
+    className="border-2 border-slate-400 bg-slate-100 rounded-md mb-4 md:mb-0 md:mr-4 h-12 w-full md:w-64 px-1"
+    onChange={(e) =>
+      setTask({ ...task, taskId: uuidv4(), description: e.target.value })
+    }
+    value={task.description}
+    placeholder="Enter Task Description"
+  />
+  <button className="bg-cyan-500 rounded-md px-4 h-12 text-white w-full md:w-auto">
+    Create
+  </button>
+</form>
+
   );
 };
 

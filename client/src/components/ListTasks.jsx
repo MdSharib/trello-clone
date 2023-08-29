@@ -20,7 +20,7 @@ const ListTasks = ({ tasks, setTasks, callData }) => {
   const statuses = ["todo", "inprogress", "closed"];
 
   return (
-    <div className="flex gap-16">
+    <div className="flex flex-col sm:flex-col md:flex-col lg:flex-row xl:flex-row gap-16">
       {statuses.map((status, index) => {
         return (
           <Section
@@ -76,8 +76,8 @@ const Section = ({
   }
 
   // to change the status of task
-  const addItemToSection = async (taskId) => {
-    // console.log("add item to section running and status is ->", status);
+  const addItemToSection = async (taskId) => {    
+
     try {
       const res = await axios.put("/change-tasks", {
         status: status,
@@ -91,7 +91,7 @@ const Section = ({
       // });
       if (res.data.success) {
         callData("success");
-        toast("Updated Successfully");
+        toast.success("Updated Successfully");
         return res.data.updatedTask;
       }
     } catch (error) {
@@ -103,7 +103,10 @@ const Section = ({
   return (
     <div
       ref={drop}
-      className={`w-64 rounded-md p-2 ${isOver ? "bg-slate-200" : ""}`}
+      className={`w-64 rounded-md p-2 bg-white shadow-md ${isOver ? "bg-slate-200" : ""}`}
+      style={{
+        height: 'fit-content',
+      }}
     >
       <Header text={text} bg={bg} count={tasksToMap.length} />
       {tasksToMap.length > 0 &&
@@ -155,7 +158,7 @@ const Task = ({ task, tasks, setTasks, callData }) => {
     try {
       const res = await axios.delete(`/delete-task/${taskId}`);
       if (res.data.success) {
-        toast("Task Removed");
+        toast.success("Task Removed");
         callData("success");
       }
     } catch (error) {
@@ -196,7 +199,7 @@ const Task = ({ task, tasks, setTasks, callData }) => {
       });
 
       callData("success");
-      toast("Updated Successfully");
+      toast.success("Updated Successfully");
       setUpdateId("");
       setUpdatedName("");
       setUpdatedDescription("");
