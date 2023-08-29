@@ -147,7 +147,7 @@ const Task = ({ task, tasks, setTasks, callData }) => {
   // react dnd for initial dragging
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
-    item: { taskId: task.taskId },
+    item: { Id: task.taskId },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
